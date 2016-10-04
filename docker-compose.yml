@@ -1,0 +1,54 @@
+# Data only container for source code.
+#
+# You may use a symlink to link your project sources
+# to the subdirectory "project", or directly work
+# in this directory.
+# 
+# The `tail` command is used to keep the container running
+#
+# The directories "appconfig" and "appfiles" are intended
+# to be used for application configuration files, and
+# generated files, such as log files, cache files, etc.
+data:
+  build: ./data/
+  command: tail -f /dev/null
+  volumes:
+    - ./project:/var/www
+    - ./appconfig:/appconfig
+    - ./appfiles:/appfiles
+
+# Mail catcher.
+#
+# smtp server on port 1025, web ui on 8025
+# 
+# This may be used to check what emails your
+# application sends
+mail:
+  image: mailhog/mailhog
+  expose:
+    - "1025"
+    - "8025"
+  ports:
+    - "8025:8025"
+
+# php fpm (used as upstream server by nginx)
+#
+# If you add a database container, you may
+# need to link it also to this phpfpm container.
+phpfpm:
+  build: ./php-fpm7/
+  links:
+    - mail:mail
+  volumes_from:
+    - data
+
+# nginx web server
+web:
+  build: ./nginx/
+  links:
+    - phpfpm:phpfpm
+  volumes_from:
+    - data
+  ports:
+   - "80:80"
+
